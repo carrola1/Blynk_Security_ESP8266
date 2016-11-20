@@ -59,10 +59,9 @@
 #include <BlynkSimpleEsp8266.h>
 #include <SimpleTimer.h>
 #include <MCP3008.h>
-#include "pitches.h"
-#include <SoftwareSerial.h>
-SoftwareSerial SwSerial(2, 3); // RX, TX
-#define BLYNK_PRINT SwSerial
+#include "alarm.h"
+#include <Wire.h>
+
 
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
@@ -92,7 +91,9 @@ int enbNotify = 0;
 void setup()
 {
   Blynk.begin(auth, ssid, pass);
-  
+  Wire.pins(4, 5);
+  Wire.setClock(400000);
+  Wire.begin();
   // Setup a function to be called every second
   timer.setInterval(1000L, getSample);
   
@@ -116,7 +117,7 @@ void getSample()
   Blynk.virtualWrite(V5,lightSenseFloat);
   Blynk.virtualWrite(V7,lightSenseInt);
   //Serial.println(lightSense);
-  if (lightSenseInt > 70) {
+  if (lightSenseInt > 54) {
     led2.on();
     if (lightPrev == 0) {
       if (enbNotify == 1) {
@@ -142,7 +143,7 @@ void getSample()
     Blynk.virtualWrite(V6,90);
     if (motionPrev == 0) {
       if (enbNotify == 1) {
-        //playAlarm();
+        playAlarm();
         Blynk.notify("Motion Detected!");
       }
     }
@@ -162,18 +163,15 @@ BLYNK_WRITE(V4)
 
 void playAlarm()
 {
-  tone(13, NOTE_G3, 1000);
-  delay(1000);
-  noTone(13);
-  delay(500);
-  tone(13, NOTE_G3, 1000);
-  delay(1000);
-  noTone(13);
-  delay(500);
-  tone(13, NOTE_G3, 1000);
-  delay(1000);
-  noTone(13);
-  delay(500);
+  
+  for (int i = 0; i < 1250; i++) {
+    Wire.beginTransmission(0x62);
+    for (int j = 0; j < 100; j++) {
+      Wire.write(uint8_t(alarmSamps[j] >> 8));
+      Wire.write(uint8_t(alarmSamps[j] & 0x00FF));
+    }
+    Wire.endTransmission();
+  }
 }
 
 void loop()
