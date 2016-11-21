@@ -94,6 +94,10 @@ void setup()
   Wire.pins(4, 5);
   Wire.setClock(400000);
   Wire.begin();
+  Wire.beginTransmission(0x62);
+  Wire.write(0x0F);
+  Wire.write(0xFF);
+  Wire.endTransmission();
   // Setup a function to be called every second
   timer.setInterval(1000L, getSample);
   
@@ -140,7 +144,7 @@ void getSample()
   //Serial.println(motionSense);
   if (motionSense > 500) {
     led3.on();
-    Blynk.virtualWrite(V6,90);
+    Blynk.virtualWrite(V6,300);
     if (motionPrev == 0) {
       if (enbNotify == 1) {
         playAlarm();
@@ -163,15 +167,23 @@ BLYNK_WRITE(V4)
 
 void playAlarm()
 {
-  
-  for (int i = 0; i < 1250; i++) {
-    Wire.beginTransmission(0x62);
-    for (int j = 0; j < 100; j++) {
-      Wire.write(uint8_t(alarmSamps[j] >> 8));
-      Wire.write(uint8_t(alarmSamps[j] & 0x00FF));
+
+  for (int i = 0; i < 5; i++) {
+    for (int j = 0; j < 300; j++) {
+      Wire.beginTransmission(0x62);
+      for (int k = 0; k < 100; k++) {
+        Wire.write(uint8_t(alarmSamps[k] >> 8));
+        Wire.write(uint8_t(alarmSamps[k] & 0x00FF));
+      }
+      Wire.endTransmission();
+      delay(1);
     }
-    Wire.endTransmission();
+    delay(500);
   }
+  Wire.beginTransmission(0x62);
+  Wire.write(0x0F);
+  Wire.write(0xFF);
+  Wire.endTransmission();
 }
 
 void loop()
